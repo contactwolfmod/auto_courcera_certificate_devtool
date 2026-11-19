@@ -1,4 +1,9 @@
 (async function autoCompleteCourseraFullMaster() {
+    // =========================================================================
+    // CONFIGURATION
+    // Replace YOUR_GEMINI_API_KEY_HERE with your Google Gemini API Key
+    // Obtain one for free at: https://aistudio.google.com/
+    // =========================================================================
     const API_KEY = "YOUR_GEMINI_API_KEY_HERE";
     const LEGAL_NAME = "WM";
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -11,20 +16,20 @@
     ];
 
     if (window.location.pathname.includes('/my-learning')) {
-        const msg = "⚠️ Bạn đang chạy nhầm tab Trang chủ! Hãy chuyển sang tab bài học rồi chạy lại.";
+        const msg = "⚠️ You are on the Dashboard tab! Please navigate to an active lesson page and re-run.";
         console.warn(msg);
         alert(msg);
         return;
     }
 
-    // 1. Gọi Gemini API (Tự động xoay vòng model mới & bắt lỗi Quota 429)
+    // 1. Call Gemini API (Automatic rotation across models & 429 Quota handling)
     async function askGemini(promptText) {
         const payload = {
             contents: [{ role: "user", parts: [{ text: promptText }] }],
             generationConfig: { temperature: 0.1 }
         };
 
-        let lastError = "Không nhận được phản hồi từ máy chủ.";
+        let lastError = "No response received from server.";
 
         for (const model of MODELS) {
             const endpoints = API_KEY.startsWith("AIza")
@@ -44,23 +49,23 @@
                     const data = await res.json();
 
                     if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        console.log(`🤖 Model phản hồi thành công: ${model}`);
+                        console.log(`🤖 Model responded successfully: ${model}`);
                         return data.candidates[0].content.parts[0].text.trim();
                     }
 
                     const errMsg = data.error?.message || `HTTP Error ${res.status}`;
                     if (res.status === 429 || /quota|rate limit|exhausted|resource_exhausted/i.test(errMsg)) {
-                        throw new Error(`⛔ HẾT QUOTA API (429): ${errMsg}`);
+                        throw new Error(`⛔ API QUOTA EXHAUSTED (429): ${errMsg}`);
                     }
                     lastError = `[${model}] ${errMsg}`;
                 } catch (e) {
-                    if (e.message.includes("HẾT QUOTA")) throw e;
+                    if (e.message.includes("API QUOTA EXHAUSTED")) throw e;
                     lastError = e.message;
                 }
             }
         }
 
-        throw new Error(`⛔ AI KHÔNG PHẢN HỒI - ĐÃ DỪNG SCRIPT!\nChi tiết: ${lastError}`);
+        throw new Error(`⛔ AI DID NOT RESPOND - SCRIPT STOPPED!\nDetails: ${lastError}`);
     }
 
     function safeClick(el) {
@@ -83,15 +88,15 @@
         );
         if (completeBtn) {
             safeClick(completeBtn);
-            console.log(`✅ [${label}] Đã bấm 'Mark as completed'`);
+            console.log(`✅ [${label}] Clicked 'Mark as completed'`);
             await sleep(2500);
             return true;
         }
-        console.log(`ℹ️ [${label}] Đã hoàn thành hoặc không có nút 'Mark as completed'.`);
+        console.log(`ℹ️ [${label}] Already completed or no 'Mark as completed' button found.`);
         return false;
     }
 
-    // 2. Quét khối câu hỏi thực sự trên màn hình
+    // 2. Scan question groups from DOM
     function scanQuestionGroups() {
         let groups = Array.from(document.querySelectorAll('[role="radiogroup"], [role="group"]')).filter(g => {
             const inputs = g.querySelectorAll('input[type="radio"], input[type="checkbox"]');
@@ -118,7 +123,7 @@
 
             return {
                 questionIndex: idx,
-                question: rawLines[0] || `Câu ${idx + 1}`,
+                question: rawLines[0] || `Question ${idx + 1}`,
                 options,
                 labelElements: labels
             };
@@ -126,7 +131,7 @@
     }
 
     async function waitForQuestionsToLoad(maxSeconds = 20) {
-        console.log("⏳ Đang đợi hệ thống tải câu hỏi...");
+        console.log("⏳ Waiting for questions to load...");
         for (let i = 0; i < maxSeconds; i++) {
             const questions = scanQuestionGroups();
             if (questions.length > 0) {
@@ -187,14 +192,14 @@
     }
 
     async function waitForGradingComplete() {
-        console.log("⏳ Đang chờ hệ thống chấm điểm...");
+        console.log("⏳ Waiting for grading completion...");
         for (let i = 0; i < 35; i++) {
             await sleep(1000);
             const pageText = document.body.innerText;
             const hasGrade = /your grade|highest grade|to pass|passed|try again|retry|keep learning/i.test(pageText);
             const noDialog = !document.querySelector('[role="dialog"]');
             if (noDialog && hasGrade) {
-                console.log("✅ Đã chấm điểm xong!");
+                console.log("✅ Grading completed!");
                 await sleep(1500);
 
                 if (window.location.pathname.includes('/attempt')) {
@@ -222,7 +227,7 @@
         });
     }
 
-    console.log("🚀 Khởi động FULL Auto Coursera (Đã cập nhật API Key mới)...");
+    console.log("🚀 Launching FULL Auto Coursera Master (AI Edition)...");
 
     if (window.location.pathname.includes('/home/module/')) {
         const firstItem = getAllMenuItems()[0];
@@ -248,10 +253,10 @@
                 video.muted = true;
                 video.currentTime = video.duration - 1;
                 await video.play();
-                console.log("🎬 [Video] Đã tua đến cuối video.");
+                console.log("🎬 [Video] Fast-forwarded to video end.");
                 await sleep(4000);
             } else {
-                console.log("⚠️ [Video] Không tìm thấy thẻ video.");
+                console.log("⚠️ [Video] Video element not found.");
             }
         }
 
@@ -267,14 +272,14 @@
 
         // 4. PRACTICE ASSIGNMENT & GRADED ASSIGNMENT
         else if (/\/(assignment-submission|quiz|practice|exam|attempt)/i.test(currentPath)) {
-            console.log("📝 [Quiz/Practice] Đang kiểm tra bài tập:", currentPath);
+            console.log("📝 [Quiz/Practice] Checking assessment:", currentPath);
 
             let quizData = await waitForQuestionsToLoad(3);
 
             if (quizData.length === 0 && !window.location.pathname.includes('/attempt')) {
                 const alreadyPassed = /passed/i.test(document.body.innerText) && !/not passed/i.test(document.body.innerText);
                 if (alreadyPassed) {
-                    console.log("ℹ️ [Quiz/Practice] Bài này đã đạt (Passed) từ trước, bỏ qua.");
+                    console.log("ℹ️ [Quiz/Practice] This assessment is already Passed, skipping.");
                 } else {
                     const startKeywords = ['start assignment', 'start practice', 'resume assignment', 'resume', 'try again', 'retry'];
                     let startBtn = null;
@@ -288,30 +293,30 @@
                     }
 
                     if (startBtn) {
-                        console.log(`🚀 Đang bấm nút '${startBtn.textContent.trim()}'...`);
+                        console.log(`🚀 Clicking '${startBtn.textContent.trim()}'...`);
                         safeClick(startBtn);
                         quizData = await waitForQuestionsToLoad(20);
                     } else {
-                        console.warn("⚠️ Không tìm thấy nút Start assignment.");
+                        console.warn("⚠️ Start assignment button not found.");
                     }
                 }
             }
 
             if (quizData.length > 0) {
-                const promptText = `Bạn là chuyên gia giải đề Cybersecurity của Google. Trả về CHÍNH XÁC mảng JSON 2 chiều chứa index (bắt đầu từ 0) của đáp án đúng cho từng câu (nếu đề yêu cầu "Select two/three answers" hoặc "Select all that apply" thì chọn đủ số lượng đáp án đúng, ví dụ: [[0, 2], [1], [3]]). Chỉ trả về JSON thuần túy, không giải thích, không markdown:${NL}${NL}` +
-                    quizData.map(q => `Câu ${q.questionIndex + 1}: ${q.question}${NL}` + q.options.map((opt, idx) => `  [${idx}] ${opt}`).join(NL)).join(NL + NL);
+                const promptText = `You are an expert exam solver for Google and Coursera certification courses. Return EXACTLY a 2D JSON array containing the 0-based indices of the correct answers for each question (if the question says "Select two/three answers" or "Select all that apply", select all correct options, e.g. [[0, 2], [1], [3]]). Return purely valid JSON with no markdown and no explanations:${NL}${NL}` +
+                    quizData.map(q => `Question ${q.questionIndex + 1}: ${q.question}${NL}` + q.options.map((opt, idx) => `  [${idx}] ${opt}`).join(NL)).join(NL + NL);
 
                 try {
-                    console.log(`🧠 Đang gửi ${quizData.length} câu hỏi cho Gemini AI...`);
+                    console.log(`🧠 Sending ${quizData.length} questions to Gemini AI...`);
                     const rawReply = await askGemini(promptText);
                     const cleanJson = rawReply.replace(/^```json/i, '').replace(/```$/i, '').trim();
                     const answers = JSON.parse(cleanJson);
 
                     if (!Array.isArray(answers) || answers.length !== quizData.length) {
-                        throw new Error(`AI trả về sai định dạng hoặc thiếu câu (${answers?.length}/${quizData.length}).`);
+                        throw new Error(`AI returned invalid format or mismatched question count (${answers?.length}/${quizData.length}).`);
                     }
 
-                    console.log("✅ Đáp án AI chọn:", answers);
+                    console.log("✅ Selected AI answers:", answers);
 
                     quizData.forEach((q, qIdx) => {
                         const chosen = answers[qIdx];
@@ -336,13 +341,13 @@
                         const checkbox = honorLabel.querySelector('input[type="checkbox"]') || document.getElementById(honorLabel.getAttribute('for'));
                         if (checkbox && !checkbox.checked) checkbox.click();
                         else if (!checkbox) honorLabel.click();
-                        console.log("☑️ Đã tích ô cam kết Honor Code.");
+                        console.log("☑️ Checked Honor Code agreement.");
                     } else if (nameInput) {
                         const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
                         setter.call(nameInput, LEGAL_NAME);
                         nameInput.dispatchEvent(new Event('input', { bubbles: true }));
                         nameInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        console.log(`✍️ Đã điền Legal name: ${LEGAL_NAME}`);
+                        console.log(`✍️ Entered Legal Name: ${LEGAL_NAME}`);
                     }
 
                     window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
@@ -357,7 +362,7 @@
                     if (submitBtns1.length > 0) {
                         const targetBtn = submitBtns1[submitBtns1.length - 1];
                         safeClick(targetBtn);
-                        console.log("⏳ Đã bấm Submit lần 1, kiểm tra hộp thoại xác nhận...");
+                        console.log("⏳ Clicked Submit (Step 1), waiting for confirmation dialog...");
 
                         for (let attempt = 0; attempt < 8; attempt++) {
                             await sleep(500);
@@ -369,37 +374,37 @@
 
                             if (dialogSubmit) {
                                 safeClick(dialogSubmit);
-                                console.log("📨 Đã bấm xác nhận Submit lần 2 trong hộp thoại!");
+                                console.log("📨 Confirmed Submit inside modal dialog!");
                                 break;
                             } else if (submitBtns2.length >= 2) {
                                 safeClick(submitBtns2[submitBtns2.length - 1]);
-                                console.log("📨 Đã bấm xác nhận Submit lần 2!");
+                                console.log("📨 Confirmed Submit (Step 2)!");
                                 break;
                             }
                         }
 
                         await waitForGradingComplete();
                     } else {
-                        console.warn("⚠️ Không tìm thấy nút Submit khả dụng sau khi tích cam kết, dừng script.");
+                        console.warn("⚠️ Submit button not available after signing Honor Code. Halting script.");
                         break;
                     }
                 } catch (err) {
-                    console.error("❌ Lỗi xử lý Quiz/Practice:", err.message);
+                    console.error("❌ Quiz/Practice error:", err.message);
                     alert(err.message);
                     break;
                 }
             } else if (!/passed/i.test(document.body.innerText)) {
-                console.warn("⚠️ Quá 20 giây nhưng câu hỏi vẫn chưa tải xong, dừng script để kiểm tra.");
+                console.warn("⚠️ Questions took longer than 20s to load. Halting script.");
                 break;
             }
         }
 
-        // 5. CÁC MỤC KHÁC
+        // 5. OTHER TYPES
         else {
             await clickMarkAsCompletedIfPresent('Other');
         }
 
-        // 6. CHUYỂN SANG BÀI TIẾP THEO
+        // 6. NAVIGATE TO NEXT ITEM
         expandAllModules();
         await sleep(500);
         const menuItems = getAllMenuItems();
@@ -408,17 +413,17 @@
 
         if (currentIndex !== -1 && currentIndex + 1 < menuItems.length) {
             const nextItem = menuItems[currentIndex + 1];
-            console.log(`➡️ [${currentIndex + 2}/${menuItems.length}] Chuyển sang: ${nextItem.innerText.split(NL)[0]}`);
+            console.log(`➡️ [${currentIndex + 2}/${menuItems.length}] Navigating to: ${nextItem.innerText.split(NL)[0]}`);
             safeClick(nextItem);
             await sleep(5000);
         } else {
             const nextBtn = findNextButton();
             if (nextBtn) {
-                console.log("➡️ Chuyển sang bài tiếp theo...");
+                console.log("➡️ Navigating to next item via button...");
                 safeClick(nextBtn);
                 await sleep(5000);
             } else {
-                console.log("🎉 Đã đi đến cuối khóa học!");
+                console.log("🎉 Reached the end of the course syllabus!");
                 break;
             }
         }

@@ -4,101 +4,141 @@
 [![AI Engine](https://img.shields.io/badge/AI%20Engine-Gemini%20Flash%20Preview-8E75C2?style=for-the-badge&logo=google)](https://ai.google.dev/)
 [![Platform](https://img.shields.io/badge/Platform-Coursera%20Web-0056D2?style=for-the-badge&logo=coursera)](https://www.coursera.org)
 [![Language](https://img.shields.io/badge/Language-JavaScript%20ES6+-F7DF1E?style=for-the-badge&logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-Công cụ tự động hóa toàn diện cho Coursera chạy trực tiếp trên **Console F12**, tích hợp **Google Gemini AI** để tự động giải bài kiểm tra (Quiz/Practice/Exam), tua video, đánh dấu bài đọc và vượt qua khóa học một cách liền mạch.
-
----
-
-## 📑 Mục lục
-- [✨ Tính năng đột phá](#-tính-năng-đột-phá)
-- [🤖 Cơ chế AI giải đề (Quiz Automation)](#-cơ-chế-ai-giải-đề-quiz-automation)
-- [🚀 Hướng dẫn sử dụng nhanh (F12 Console)](#-hướng-dẫn-sử-dụng-nhanh-f12-console)
-- [📤 Hướng dẫn khởi tạo & Push lên GitHub](#-hướng-dẫn-khởi-tạo--push-lên-github)
-- [⚙️ Cấu hình API Key & Legal Name](#️-cấu-hình-api-key--legal-name)
-- [⚠️ Cảnh báo bảo mật & Bản quyền API Key](#️-cảnh-báo-bảo-mật--bản-quyền-api-key)
+An all-in-one browser automation tool for Coursera running directly inside the **Developer Tools Console (F12)**. Integrated with **Google Gemini AI** to automatically solve quizzes/exams, fast-forward video lectures, complete reading assignments, sign the Honor Code, and navigate through course modules autonomously.
 
 ---
 
-## ✨ Tính năng đột phá
-
-* **🧠 Tích hợp Google Gemini AI:** Tự động gửi câu hỏi trắc nghiệm (Single/Multiple Choice, Select all that apply) đến các mô hình `gemini-3-flash-preview`, `gemini-3.1-flash-lite-preview`, `gemini-2.5-flash-lite` để nhận đáp án chính xác.
-* **🔁 Tự động xoay vòng Model & Xử lý Quota (429):** Tự động chuyển đổi giữa các model và endpoint khi bị quá tải hạn mức.
-* **✍️ Tự động ký Cam kết danh dự (Honor Code):** Tự động tích ô "I understand and agree", điền tên pháp lý (Legal Name) và nộp bài (Submit) kèm xác nhận hộp thoại.
-* **⏳ Chờ chấm điểm thông minh (Auto Grading Wait):** Lắng nghe trạng thái nộp bài và chờ kết quả chấm điểm trước khi chuyển sang bài tiếp theo.
-* **🎬 Tua nhanh Video & Hoàn thành:** Tua trực tiếp video đến cuối (`duration - 1`), tắt tiếng và xác nhận hoàn thành bài giảng.
-* **📖 Tự động hoàn thành Reading & Plugin/Lab:** Bấm `Mark as completed` cho các bài đọc bổ trợ và widget.
-* **🧭 Điều hướng menu toàn diện:** Tự động mở rộng danh sách module và duyệt qua toàn bộ cây bài học tuần tự.
+## 📑 Table of Contents
+- [✨ Key Features](#-key-features)
+- [🤖 AI Quiz Solving Architecture](#-ai-quiz-solving-architecture)
+- [🚀 Quick Start (F12 Console)](#-quick-start-f12-console)
+- [⚙️ Configuration](#️-configuration)
+- [🛠️ How It Works](#️-how-it-works)
+- [⚠️ Security & Disclaimer](#️-security--disclaimer)
+- [❓ FAQ & Troubleshooting](#-faq--troubleshooting)
 
 ---
 
-## 🤖 Cơ chế AI giải đề (Quiz Automation)
+## ✨ Key Features
+
+* **🧠 AI-Powered Quiz & Exam Solver:** Automatically parses question groups and options from the DOM, queries **Google Gemini AI** via REST API, and accurately selects Single-Choice, Multiple-Choice, or "Select all that apply" answers.
+* **🔁 Dynamic Model Failover & Quota Handling (429):** Rotates between `gemini-3-flash-preview`, `gemini-3.1-flash-lite-preview`, and `gemini-2.5-flash-lite` with fallback endpoints if quota limits are encountered.
+* **✍️ Automated Honor Code & Legal Name Signature:** Automatically checks the *"I understand and agree to the Honor Code"* box, fills in your designated Legal Name, and submits the assignment through modal confirmations.
+* **⏳ Intelligent Grading Wait:** Actively listens for Coursera's automated grading engine, waits for the grade status (*Passed/Highest grade*), and closes review attempts.
+* **🎬 Instant Video Completion:** Fast-forwards video playback directly to the end (`currentTime = duration - 1`), mutes audio to avoid noise, and triggers Coursera's completion tracking.
+* **📖 Reading & Widget Auto-Completion:** Smoothly scrolls through reading assignments and clicks `Mark as completed` for articles, plugin widgets, and ungraded labs.
+* **🧭 Seamless Module Navigation:** Expands all module menus and iteratively steps through every item in the course syllabus until completion.
+
+---
+
+## 🤖 AI Quiz Solving Architecture
 
 ```mermaid
 flowchart TD
-    A["Phát hiện Quiz / Assignment"] --> B{"Bài đã Passed chưa?"}
-    B -- Có --> C["Bỏ qua & Chuyển bài kế tiếp"]
-    B -- Chưa --> D["Bấm 'Start assignment' / 'Resume'"]
-    D --> E["Quét cấu trúc câu hỏi & đáp án trên DOM"]
-    E --> F["Gửi Prompt đến Gemini AI qua REST API"]
-    F --> G["Nhận mảng JSON Index đáp án chính xác"]
-    G --> H["Tự động click chọn radio/checkbox tương ứng"]
-    H --> I["Ký Honor Code & Điền Legal Name"]
-    I --> J["Bấm Submit 2 bước (Xác nhận Dialog)"]
-    J --> K["Chờ hệ thống chấm điểm xong"]
-    K --> L["Chuyển sang bài tiếp theo"]
+    A["Detect Quiz / Assignment"] --> B{"Already Passed?"}
+    B -- Yes --> C["Skip & Go to Next Item"]
+    B -- No --> D["Click 'Start Assignment' / 'Resume'"]
+    D --> E["Scan Questions & Options from DOM"]
+    E --> F["Send Formatted Prompt to Gemini AI REST API"]
+    F --> G["Parse 2D JSON Array of Answer Indices"]
+    G --> H["Trigger Synthetic Clicks on Radio / Checkbox Labels"]
+    H --> I["Check Honor Code & Type Legal Name"]
+    I --> J["Execute 2-Step Submission (Handle Dialog Modal)"]
+    J --> K["Wait for System Grading Completion"]
+    K --> L["Navigate to Next Course Item"]
 ```
 
 ---
 
-## 🚀 Hướng dẫn sử dụng nhanh (F12 Console)
+## 🚀 Quick Start (F12 Console)
 
-1. Đăng nhập vào [Coursera](https://www.coursera.org) và mở khóa học cần hoàn thành.
-2. Đảm bảo bạn đang ở **trang bài học cụ thể** (URL dạng `/lecture/...` hoặc `/supplement/...`, không chạy ở trang chủ `/my-learning`).
-3. Nhấn **`F12`** (hoặc `Ctrl + Shift + I` trên Windows, `Cmd + Option + I` trên macOS).
-4. Chọn tab **Console**.
-5. Mở tệp **[`coursera_devtool.js`](./coursera_devtool.js)**, sao chép toàn bộ mã nguồn.
-6. Dán vào Console và nhấn **Enter**.
-7. Script sẽ tự động chạy liên tục qua tất cả các bài học cho đến hết khóa học.
+You can run the script in **3 simple steps** without installing any extensions:
+
+### Step 1: Open Your Course on Coursera
+1. Log in to [Coursera.org](https://www.coursera.org).
+2. Navigate to your enrolled course and open any active lesson (URL format: `/lecture/...`, `/supplement/...`, or `/quiz/...`).
+   > *Note: Do not run on the main dashboard (`/my-learning`).*
+
+### Step 2: Open Browser DevTools
+* Press **`F12`** (or `Ctrl + Shift + I` on Windows / `Cmd + Option + I` on macOS).
+* Select the **Console** tab.
+
+### Step 3: Paste and Execute
+1. Copy the full code from **[`coursera_devtool.js`](./coursera_devtool.js)**.
+2. Replace `YOUR_GEMINI_API_KEY_HERE` with your actual Google Gemini API Key.
+3. Paste into the Console and hit **Enter**.
+4. The tool will start running immediately, logging each step to the console.
 
 ---
 
-## ⚙️ Cấu hình API Key & Legal Name
+## ⚙️ Configuration
 
-Ở đầu tệp [`coursera_devtool.js`](./coursera_devtool.js), bạn có thể tùy chỉnh:
+At the top of [`coursera_devtool.js`](./coursera_devtool.js), configure your credentials and details:
 
 ```javascript
-const API_KEY = "YOUR_GEMINI_API_KEY_HERE"; // Thay bằng Gemini API Key của bạn
-const LEGAL_NAME = "WM"; // Họ và tên của bạn dùng để ký chứng chỉ
+// 1. Google Gemini API Key (Get free key from https://aistudio.google.com/)
+const API_KEY = "YOUR_GEMINI_API_KEY_HERE";
+
+// 2. Your Full Legal Name (Used for Coursera certificate verification & Honor Code submission)
+const LEGAL_NAME = "Your Legal Name";
+
+// 3. Preferred Gemini models in rotation order
+const MODELS = [
+    "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-2.5-flash-lite"
+];
 ```
 
 ---
 
-## 📤 Hướng dẫn khởi tạo & Push lên GitHub
+## 🛠️ How It Works
 
-Dự án hiện tại được lưu cục bộ trên máy tính của bạn. Để đưa dự án lên GitHub `https://github.com/contactwolfmod/auto_courcera_certificate_devtool`, bạn hãy thực hiện theo các bước sau trong terminal:
-
-### 1. Khởi tạo Git và liên kết Remote:
-```bash
-cd "C:\Users\MSI 15\auto_courcera_certificate_devtool"
-git init
-git add .
-git commit -m "feat: initial release of Coursera Full Master Auto DevTool with Gemini AI"
-git branch -M main
-git remote add origin https://github.com/contactwolfmod/auto_courcera_certificate_devtool.git
-```
-
-### 2. Đẩy mã nguồn lên GitHub (Push):
-```bash
-git push -u origin main
-```
-*(Nếu repository trên GitHub yêu cầu xác thực, hãy nhập GitHub Personal Access Token của bạn).*
+1. **SPA Route Detection:** Continuously monitors `window.location.pathname` to identify the resource type:
+   - `/lecture/`: HTML5 Video player.
+   - `/supplement/`: Reading articles.
+   - `/ungradedWidget/` / `/ungradedLti/`: Interactive widgets and labs.
+   - `/quiz/` / `/exam/` / `/assignment-submission/`: Assessments.
+2. **Synthetic Event Dispatching:** Dispatches real DOM `MouseEvent` (`mousedown`, `mouseup`, `click` with `bubbles: true`) to ensure React event listeners register human-like interactions.
+3. **Structured AI Prompting:** Sends formatted multiple-choice questions to Gemini with strict temperature (`0.1`) requesting a pure 2D JSON array of index selections, minimizing hallucinations.
 
 ---
 
-## ⚠️ Cảnh báo bảo mật & Bản quyền API Key
+## ⚠️ Security & Disclaimer
 
 > [!WARNING]
-> **Lưu ý bảo mật về API Key:**
-> Trong file `coursera_devtool.js` hiện có chứa trực tiếp mã `API_KEY`. Nếu bạn đẩy mã nguồn này lên một kho lưu trữ **Công khai (Public Repository)** trên GitHub:
-> - Các hệ thống quét tự động (Secret Scanner) của Google/GitHub sẽ phát hiện và có thể **vô hiệu hóa (revoke)** key của bạn ngay lập tức.
-> - **Khuyến nghị:** Hãy đặt kho lưu trữ ở chế độ **Riêng tư (Private)**, hoặc xóa key trước khi push công khai và hướng dẫn người dùng tự điền API Key cá nhân của họ.
+> **API Key Safety:**
+> Never commit or push your personal `API_KEY` to public repositories. GitHub Secret Scanning and Google Cloud will automatically revoke leaked keys within minutes.
+
+> [!CAUTION]
+> **Terms of Service & Honor Code Notice:**
+> This repository is developed **strictly for educational and research purposes** to explore browser automation, DOM reverse engineering, and LLM API integrations. 
+> Using automated scripts to bypass assessments or artificially obtain certificates violates Coursera's Honor Code and Terms of Service. The maintainers assume no liability for account suspensions, course disqualifications, or revoked certificates.
+
+---
+
+## ❓ FAQ & Troubleshooting
+
+<details>
+<summary><b>1. "API Quota Exceeded (429)" error?</b></summary>
+The script automatically rotates between 3 different Gemini models. If you reach your free tier limits on Google AI Studio, wait a few minutes or provide an API Key from a paid project.
+</details>
+
+<details>
+<summary><b>2. Script stopped at a Quiz without submitting?</b></summary>
+Check if Coursera presented a non-standard questionnaire, peer-review assignment, or verification selfie. Complete that specific step manually, then re-run the script.
+</details>
+
+<details>
+<summary><b>3. How do I stop the script?</b></summary>
+Simply reload the browser tab (Press <code>F5</code> or <code>Ctrl + R</code>).
+</details>
+
+---
+
+## 👨‍💻 Author & Contributions
+
+* **Repository:** [https://github.com/contactwolfmod/auto_courcera_certificate_devtool](https://github.com/contactwolfmod/auto_courcera_certificate_devtool)
+* Contributions, bug reports, and pull requests are welcome!
