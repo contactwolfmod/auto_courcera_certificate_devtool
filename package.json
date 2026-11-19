@@ -1,0 +1,27 @@
+{
+  "name": "auto-courcera-certificate-devtool",
+  "version": "2.0.0",
+  "description": "Browser Console (F12) Developer Tool for automating Coursera video lectures, readings, and course progress.",
+  "main": "coursera_devtool.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/contactwolfmod/auto_courcera_certificate_devtool.git"
+  },
+  "keywords": [
+    "coursera",
+    "automation",
+    "devtool",
+    "console-script",
+    "certificate",
+    "javascript"
+  ],
+  "author": "contactwolfmod",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/contactwolfmod/auto_courcera_certificate_devtool/issues"
+  },
+  "homepage": "https://github.com/contactwolfmod/auto_courcera_certificate_devtool#readme"
+}
